@@ -210,7 +210,7 @@ function renderDashboardTab() {
     });
 
     // Populate Cards
-    document.getElementById('stat-revenue').textContent = `$${totalRevenue.toFixed(2)}`;
+    document.getElementById('stat-revenue').textContent = `Ksh ${totalRevenue.toFixed(2)}`;
     document.getElementById('stat-orders').textContent = totalOrdersCount;
     document.getElementById('stat-customers').textContent = customersCount;
     document.getElementById('stat-bestseller').textContent = bestSellerName;
@@ -230,7 +230,7 @@ function renderDashboardTab() {
             tr.innerHTML = `
                 <td style="font-weight: 600; color: #f9b934;">${sale.order_number}</td>
                 <td>${sale.customer_name}</td>
-                <td>$${parseFloat(sale.total_amount).toFixed(2)}</td>
+                <td>Ksh ${parseFloat(sale.total_amount).toFixed(2)}</td>
                 <td>${sale.payment_method}</td>
                 <td class="text-white-50">${dateStr}</td>
             `;
@@ -439,7 +439,7 @@ function renderProductsTab() {
             </td>
             <td style="font-weight: 600;">${product.name}</td>
             <td><span class="badge bg-secondary">${product.category || 'General'}</span></td>
-            <td>$${parseFloat(product.price).toFixed(2)}</td>
+            <td>Ksh ${parseFloat(product.price).toFixed(2)}</td>
             <td>${product.stock_quantity || 0} units</td>
             <td class="text-white-50">${dateStr}</td>
             <td>
@@ -567,7 +567,7 @@ function renderOrdersTab() {
         const items = Array.isArray(order.products_ordered) ? order.products_ordered : [];
         const itemsListHtml = items.map(item => `
             <div class="small" style="line-height: 1.2; margin-bottom: 4px;">
-                • <strong>${item.name}</strong> (x${item.quantity}) - $${parseFloat(item.price).toFixed(2)}
+                • <strong>${item.name}</strong> (x${item.quantity}) - Ksh ${parseFloat(item.price).toFixed(2)}
             </div>
         `).join('');
 
@@ -584,7 +584,7 @@ function renderOrdersTab() {
             </td>
             <td>${itemsListHtml}</td>
             <td>
-                <div style="font-weight: 700;">$${parseFloat(order.total_amount).toFixed(2)}</div>
+                <div style="font-weight: 700;">Ksh ${parseFloat(order.total_amount).toFixed(2)}</div>
                 <div class="small text-white-50">${order.payment_method}</div>
             </td>
             <td>

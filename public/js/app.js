@@ -169,7 +169,7 @@
                             <p style="font-size: 0.85rem; color: #6a6a6a; min-height: 40px; margin-bottom: 10px;">${product.description || ''}</p>
                         </div>
                         <div>
-                            <strong class="product-price" style="font-size: 1.25rem; color: #2f2f2f; display: block; margin-bottom: 15px;">$${parseFloat(product.price).toFixed(2)}</strong>
+                            <strong class="product-price" style="font-size: 1.25rem; color: #2f2f2f; display: block; margin-bottom: 15px;">Ksh ${parseFloat(product.price).toFixed(2)}</strong>
                             <button class="btn btn-secondary btn-sm w-100 btn-add-to-cart" style="border-radius: 5px; font-weight: 500; font-size: 0.85rem; background: #2f2f2f; border: none; padding: 8px;">Add to Cart</button>
                         </div>
                     </div>
@@ -226,7 +226,7 @@
                             <p style="font-size: 0.85rem; color: #6a6a6a; min-height: 40px; margin-bottom: 10px;">${product.description || ''}</p>
                         </div>
                         <div>
-                            <strong class="product-price" style="font-size: 1.25rem; color: #2f2f2f; display: block; margin-bottom: 15px;">$${parseFloat(product.price).toFixed(2)}</strong>
+                            <strong class="product-price" style="font-size: 1.25rem; color: #2f2f2f; display: block; margin-bottom: 15px;">Ksh ${parseFloat(product.price).toFixed(2)}</strong>
                             <button class="btn btn-secondary btn-sm w-100 btn-add-to-cart" style="border-radius: 5px; font-weight: 500; font-size: 0.85rem; background: #2f2f2f; border: none; padding: 8px;">Add to Cart</button>
                         </div>
                     </div>
@@ -279,8 +279,8 @@
                 if (totalsContainer) {
                     const subtotalValEl = totalsContainer.querySelector('.row.mb-3 strong.text-black');
                     const totalValEl = totalsContainer.querySelector('.row.mb-5 strong.text-black');
-                    if (subtotalValEl) subtotalValEl.textContent = `$0.00`;
-                    if (totalValEl) totalValEl.textContent = `$0.00`;
+                    if (subtotalValEl) subtotalValEl.textContent = `Ksh 0.00`;
+                    if (totalValEl) totalValEl.textContent = `Ksh 0.00`;
                 }
                 return;
             }
@@ -299,7 +299,7 @@
                     <td class="product-name">
                         <h2 class="h5 text-black">${item.name}</h2>
                     </td>
-                    <td>$${item.price.toFixed(2)}</td>
+                    <td>Ksh ${item.price.toFixed(2)}</td>
                     <td>
                         <div class="input-group mb-3 d-flex align-items-center quantity-container" style="max-width: 120px; margin: auto;">
                             <div class="input-group-prepend">
@@ -311,7 +311,7 @@
                             </div>
                         </div>
                     </td>
-                    <td>$${(item.price * item.quantity).toFixed(2)}</td>
+                    <td>Ksh ${(item.price * item.quantity).toFixed(2)}</td>
                     <td><button type="button" class="btn btn-black btn-sm btn-remove">X</button></td>
                 `;
 
@@ -348,8 +348,8 @@
             if (totalsContainer) {
                 const subtotalValEl = totalsContainer.querySelector('.row.mb-3 strong.text-black');
                 const totalValEl = totalsContainer.querySelector('.row.mb-5 strong.text-black');
-                if (subtotalValEl) subtotalValEl.textContent = `$${totals.amount.toFixed(2)}`;
-                if (totalValEl) totalValEl.textContent = `$${totals.amount.toFixed(2)}`;
+                if (subtotalValEl) subtotalValEl.textContent = `Ksh ${totals.amount.toFixed(2)}`;
+                if (totalValEl) totalValEl.textContent = `Ksh ${totals.amount.toFixed(2)}`;
             }
         }
 
@@ -396,7 +396,7 @@
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${item.name} <strong class="mx-2">x</strong> ${item.quantity}</td>
-                <td>$${(item.price * item.quantity).toFixed(2)}</td>
+                <td>Ksh ${(item.price * item.quantity).toFixed(2)}</td>
             `;
             orderTableBody.appendChild(tr);
             subtotal += item.price * item.quantity;
@@ -406,7 +406,7 @@
         const subtotalTr = document.createElement('tr');
         subtotalTr.innerHTML = `
             <td class="text-black font-weight-bold"><strong>Cart Subtotal</strong></td>
-            <td class="text-black">$${subtotal.toFixed(2)}</td>
+            <td class="text-black">Ksh ${subtotal.toFixed(2)}</td>
         `;
         orderTableBody.appendChild(subtotalTr);
 
@@ -414,7 +414,7 @@
         const totalTr = document.createElement('tr');
         totalTr.innerHTML = `
             <td class="text-black font-weight-bold"><strong>Order Total</strong></td>
-            <td class="text-black font-weight-bold"><strong>$${subtotal.toFixed(2)}</strong></td>
+            <td class="text-black font-weight-bold"><strong>Ksh ${subtotal.toFixed(2)}</strong></td>
         `;
         orderTableBody.appendChild(totalTr);
 
