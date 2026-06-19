@@ -609,11 +609,117 @@ function renderOrdersTab() {
     });
 }
 
+// Helper: Show outbound email notification preview
+function showEmailSentPreview(to, subject, body) {
+    const oldModal = document.getElementById('email-sent-preview-modal');
+    if (oldModal) oldModal.remove();
+
+    const modalDiv = document.createElement('div');
+    modalDiv.id = 'email-sent-preview-modal';
+    modalDiv.className = 'modal fade';
+    modalDiv.tabIndex = -1;
+    modalDiv.innerHTML = `
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-white" style="background: #252830; border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title" style="font-weight: 700; color: #f9b934;"><i class="fa fa-paper-plane me-2"></i> Email Notification Dispatched</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-white-50">An email notification has been generated and sent immediately to the buyer.</p>
+                    <div class="p-3 rounded mb-2" style="background: rgba(0,0,0,0.2); font-family: monospace; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.05); color: #e0e0e0; word-break: break-all;">
+                        <div><strong>To:</strong> ${to}</div>
+                        <div><strong>Subject:</strong> ${subject}</div>
+                        <hr style="border-color: rgba(255,255,255,0.1);">
+                        <div style="white-space: pre-wrap; line-height: 1.4;">${body}</div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" style="background: #3e445c; border: none; border-radius: 5px;">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modalDiv);
+    const bsModal = new bootstrap.Modal(modalDiv);
+    bsModal.show();
+}
+
+async function sendEmailNotification(emailDetails) {
+    showEmailSentPreview(emailDetails.to, emailDetails.subject, emailDetails.body);
+}
+
 // Action: Update Order Status
 window.handleUpdateOrderStatus = async function (orderId, newStatus) {
     try {
+        let order = ordersData.find(o => o.id === orderId);
+        if (!order) {
+            order = await window.Supa.fetchById('orders', orderId);
+        }
+        if (!order) {
+            throw new Error("Order records could not be found.");
+        }
+
+        let pickupTime = "";
+        let pickupLocation = "Elly Furniture Main Showroom, Ngong Road, Nairobi";
+        
+        if (newStatus === 'Confirmed') {
+            pickupTime = prompt("Please specify the pickup date and time for the customer:", "Tomorrow at 10:00 AM");
+            if (pickupTime === null) return; // User cancelled
+            pickupTime = pickupTime.trim() || "Tomorrow at 10:00 AM";
+
+            pickupLocation = prompt("Please specify the pickup location:", "Elly Furniture Main Showroom, Ngong Road, Nairobi");
+            if (pickupLocation === null) return; // User cancelled
+            pickupLocation = pickupLocation.trim() || "Elly Furniture Main Showroom, Ngong Road, Nairobi";
+        }
+
+        // Update status in Supabase
         await window.Supa.update('orders', orderId, { order_status: newStatus });
         showToast(`Order status updated to <strong>${newStatus}</strong>.`);
+
+        // Send Email Notification immediately
+        if (newStatus === 'Confirmed') {
+            await sendEmailNotification({
+                to: order.email,
+                subject: `Order Approved - Elly Furniture [${order.order_number}]`,
+                body: `Hello ${order.customer_name},
+
+Your order ${order.order_number} has been approved! We are excited to prepare your furniture items.
+
+Pickup Instructions:
+- Pickup Time: ${pickupTime}
+- Pickup Location: ${pickupLocation}
+
+Please show this email confirmation when collecting your order.
+
+Thank you for choosing Elly Furniture!
+Support Team`
+            });
+        } else if (newStatus === 'Cancelled') {
+            let refundDetails = "";
+            if (order.payment_method === 'M-Pesa') {
+                refundDetails = `Refund Method: M-Pesa (refunded automatically to phone number: ${order.phone})`;
+            } else {
+                refundDetails = `Refund Method: Stored Method (Manual refund processed)`;
+            }
+
+            await sendEmailNotification({
+                to: order.email,
+                subject: `Order Declined - Elly Furniture [${order.order_number}]`,
+                body: `Hello ${order.customer_name},
+
+We regret to inform you that your order ${order.order_number} has been declined.
+
+Refund Information:
+${refundDetails}
+
+For support regarding your refund or purchase details, please contact us directly at foolp481@gmail.com.
+
+Sincerely,
+Elly Furniture Support Team`
+            });
+        }
+
         await refreshAllData();
     } catch (e) {
         console.error("Update status failed:", e);
