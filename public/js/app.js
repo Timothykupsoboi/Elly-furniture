@@ -617,16 +617,16 @@
         // Run badge updates on all pages
         Cart.updateHeaderBadge();
 
-        const path = window.location.pathname;
-        if (path.endsWith('index.html') || path === '/' || path.endsWith('/')) {
+        const path = window.location.pathname.toLowerCase();
+        if (path.endsWith('index.html') || path.endsWith('/index') || path.endsWith('/') || path === '') {
             initHomePage();
-        } else if (path.endsWith('shop.html')) {
+        } else if (path.endsWith('shop.html') || path.endsWith('/shop')) {
             initShopPage();
-        } else if (path.endsWith('cart.html')) {
+        } else if (path.endsWith('cart.html') || path.endsWith('/cart')) {
             initCartPage();
-        } else if (path.endsWith('checkout.html')) {
+        } else if (path.endsWith('checkout.html') || path.endsWith('/checkout')) {
             initCheckoutPage();
-        } else if (path.endsWith('thankyou.html')) {
+        } else if (path.endsWith('thankyou.html') || path.endsWith('/thankyou')) {
             initThankYouPage();
         }
     }
