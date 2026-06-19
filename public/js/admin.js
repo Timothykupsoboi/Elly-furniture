@@ -532,15 +532,13 @@ window.handleSaveProduct = async function () {
 
 // Form Operations: Delete Product
 window.handleDeleteProduct = async function (productId, name) {
-    if (confirm(`Are you sure you want to delete "${name}" from the showroom catalog?`)) {
-        try {
-            await window.Supa.delete('products', productId);
-            showToast(`Product <strong>${name}</strong> deleted successfully.`);
-            await refreshAllData();
-        } catch (e) {
-            console.error("Delete product failed:", e);
-            showToast(`Failed to delete product: ${e.message}`, "error");
-        }
+    try {
+        await window.Supa.delete('products', productId);
+        showToast(`Product <strong>${name}</strong> deleted successfully.`);
+        await refreshAllData();
+    } catch (e) {
+        console.error("Delete product failed:", e);
+        showToast(`Failed to delete product: ${e.message}`, "error");
     }
 };
 
