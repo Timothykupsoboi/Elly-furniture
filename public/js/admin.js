@@ -150,7 +150,7 @@ window.switchTab = function (tabId) {
     if (titleEl) {
         if (tabId === 'dashboard') titleEl.textContent = 'Sales Analytics Dashboard';
         if (tabId === 'products') titleEl.textContent = 'Showroom Catalog Manager';
-        if (tabId === 'orders') titleEl.textContent = 'Fulfillment Orders Tracker';
+        if (tabId === 'orders') titleEl.textContent = 'Cart';
     }
 
     renderCurrentTab();

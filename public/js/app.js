@@ -45,12 +45,12 @@
     }
 
     // -------------------------------------------------------------
-    // State Management: Cart Logic (Saved in sessionStorage)
+    // State Management: Cart Logic (Saved in localStorage)
     // -------------------------------------------------------------
     const Cart = {
         getItems() {
             try {
-                const data = sessionStorage.getItem('elly_cart');
+                const data = localStorage.getItem('elly_cart');
                 return data ? JSON.parse(data) : [];
             } catch (e) {
                 console.error("Cart retrieval failed:", e);
@@ -59,7 +59,7 @@
         },
 
         saveItems(items) {
-            sessionStorage.setItem('elly_cart', JSON.stringify(items));
+            localStorage.setItem('elly_cart', JSON.stringify(items));
             this.updateHeaderBadge();
         },
 
@@ -78,7 +78,7 @@
                 });
             }
             this.saveItems(items);
-            showToast(`Added <strong>${product.name}</strong> to cart!`);
+            showToast("Item successfully added to cart");
         },
 
         removeItem(productId) {
@@ -98,7 +98,7 @@
         },
 
         clear() {
-            sessionStorage.removeItem('elly_cart');
+            localStorage.removeItem('elly_cart');
             this.updateHeaderBadge();
         },
 
@@ -114,11 +114,9 @@
         },
 
         updateHeaderBadge() {
-            // Find the cart link icon in navbar and append a badge
             const cartLinks = document.querySelectorAll('a[href="cart.html"]');
             const totals = this.getTotals();
             cartLinks.forEach(link => {
-                // remove existing badge
                 const oldBadge = link.querySelector('.cart-badge');
                 if (oldBadge) oldBadge.remove();
 
@@ -275,6 +273,15 @@
                 // Hide checkout sum blocks
                 const cartSummaryBlock = document.querySelector('.site-blocks-table').parentNode.nextElementSibling;
                 if (cartSummaryBlock) cartSummaryBlock.style.display = 'none';
+
+                // Reset totals to zero when empty
+                const totalsContainer = document.querySelector('.col-md-6.pl-5');
+                if (totalsContainer) {
+                    const subtotalValEl = totalsContainer.querySelector('.row.mb-3 strong.text-black');
+                    const totalValEl = totalsContainer.querySelector('.row.mb-5 strong.text-black');
+                    if (subtotalValEl) subtotalValEl.textContent = `$0.00`;
+                    if (totalValEl) totalValEl.textContent = `$0.00`;
+                }
                 return;
             }
 
@@ -348,19 +355,20 @@
 
         renderCartTable();
 
-        // Wire Update Cart Button (can just re-render or trigger validation)
-        const updateCartBtn = document.querySelector('button.btn-black.btn-sm.btn-block');
-        if (updateCartBtn && updateCartBtn.textContent === "Update Cart") {
-            updateCartBtn.addEventListener('click', (e) => {
+        // Wire Delete Cart Button
+        const deleteCartBtn = document.getElementById('btn-delete-cart');
+        if (deleteCartBtn) {
+            deleteCartBtn.addEventListener('click', (e) => {
                 e.preventDefault();
+                Cart.clear();
                 renderCartTable();
-                showToast("Cart updated successfully.");
+                showToast("Cart cleared successfully.");
             });
         }
         
         // Wire Continue Shopping Button
-        const continueBtn = document.querySelector('button.btn-outline-black.btn-sm.btn-block');
-        if (continueBtn && continueBtn.textContent === "Continue Shopping") {
+        const continueBtn = document.getElementById('btn-continue-shopping');
+        if (continueBtn) {
             continueBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 window.location.href = 'shop.html';
