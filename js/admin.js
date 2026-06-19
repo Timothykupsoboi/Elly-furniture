@@ -1,0 +1,626 @@
+// Elly Furniture - Admin Dashboard Controller (Supabase Powered)
+
+let supabase = null;
+let currentTab = 'dashboard';
+let productsData = [];
+let ordersData = [];
+let salesRecordsData = [];
+let customersCount = 0;
+
+// Chart references for cleanup
+let salesChartRef = null;
+let pieChartRef = null;
+
+// Modal references
+let bootstrapProductModal = null;
+
+// -----------------------------------------------------------------
+// Toast Utility
+// -----------------------------------------------------------------
+function showToast(message, type = 'success') {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;';
+        document.body.appendChild(container);
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'error' ? 'danger' : type}`;
+    toast.style.cssText = 'min-width: 250px; pointer-events: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: slideIn 0.3s ease; margin-bottom: 0;';
+    toast.innerHTML = message;
+    
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.style.animation = 'fadeOut 0.3s ease forwards';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+// -----------------------------------------------------------------
+// Security Guard & Page Initialization
+// -----------------------------------------------------------------
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // Initialize Supabase Connection
+        supabase = await window.Supa.init();
+        
+        // Auth Guard
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            window.location.href = 'admin-login.html';
+            return;
+        }
+
+        // Display Admin User Email
+        const userDisplay = document.getElementById('admin-user-display');
+        if (userDisplay && session.user) {
+            userDisplay.textContent = `Logged in as: ${session.user.email}`;
+        }
+
+        // Setup Modals
+        const modalEl = document.getElementById('productModal');
+        if (modalEl) {
+            bootstrapProductModal = new bootstrap.Modal(modalEl);
+        }
+
+        // Add change listener to product image file input
+        const imageFileInput = document.getElementById('product-image-file');
+        if (imageFileInput) {
+            imageFileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        // Save Base64 to Image URL field and clear file field label if needed
+                        document.getElementById('product-image-url').value = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        // Load all data
+        await refreshAllData();
+
+    } catch (e) {
+        console.error("Dashboard initialization failed:", e);
+        showToast("Error initializing Supabase connection.", "error");
+    }
+});
+
+// Refresh all records from Database
+async function refreshAllData() {
+    try {
+        productsData = await window.Supa.fetchAll('products');
+        ordersData = await window.Supa.fetchAll('orders');
+        salesRecordsData = await window.Supa.fetchAll('sales_records');
+        
+        // Count customers
+        try {
+            const customers = await window.Supa.fetchAll('customers');
+            customersCount = customers.length;
+        } catch (cErr) {
+            // fallback: count unique order names/emails
+            const uniqueCust = new Set(ordersData.map(o => o.email.toLowerCase()));
+            customersCount = uniqueCust.size;
+        }
+
+        // Render Active Tab
+        renderCurrentTab();
+
+    } catch (err) {
+        console.error("Data refresh failed:", err);
+        showToast(`Failed to load database records: ${err.message}`, "error");
+    }
+}
+
+// -----------------------------------------------------------------
+// Navigation Tab Control
+// -----------------------------------------------------------------
+window.switchTab = function (tabId) {
+    currentTab = tabId;
+    
+    // Manage tab buttons class active
+    const menuButtons = document.querySelectorAll('.nav-menu-btn');
+    menuButtons.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.id === `btn-tab-${tabId}`) {
+            btn.classList.add('active');
+        }
+    });
+
+    // Toggle panels
+    const panels = document.querySelectorAll('.tab-panel');
+    panels.forEach(panel => {
+        panel.classList.add('d-none');
+        if (panel.id === `panel-${tabId}`) {
+            panel.classList.remove('d-none');
+        }
+    });
+
+    // Update panel title header
+    const titleEl = document.getElementById('panel-title');
+    if (titleEl) {
+        if (tabId === 'dashboard') titleEl.textContent = 'Sales Analytics Dashboard';
+        if (tabId === 'products') titleEl.textContent = 'Showroom Catalog Manager';
+        if (tabId === 'orders') titleEl.textContent = 'Fulfillment Orders Tracker';
+    }
+
+    renderCurrentTab();
+};
+
+function renderCurrentTab() {
+    if (currentTab === 'dashboard') {
+        renderDashboardTab();
+    } else if (currentTab === 'products') {
+        renderProductsTab();
+    } else if (currentTab === 'orders') {
+        renderOrdersTab();
+    }
+}
+
+// -----------------------------------------------------------------
+// Sign Out
+// -----------------------------------------------------------------
+window.handleSignOut = async function () {
+    if (confirm("Are you sure you want to sign out?")) {
+        try {
+            await supabase.auth.signOut();
+            window.location.href = 'admin-login.html';
+        } catch (e) {
+            console.error("Sign out failed:", e);
+            window.location.href = 'admin-login.html';
+        }
+    }
+};
+
+// -----------------------------------------------------------------
+// TAB: ANALYTICS & DASHBOARD
+// -----------------------------------------------------------------
+function renderDashboardTab() {
+    // 1. Calculate Stats
+    // Exclude 'Cancelled' orders from active revenue calculations
+    const activeOrders = ordersData.filter(o => o.order_status !== 'Cancelled');
+    const totalRevenue = activeOrders.reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
+    const totalOrdersCount = ordersData.length;
+
+    // Best Selling Products calculation
+    const prodCounts = {};
+    activeOrders.forEach(order => {
+        const items = Array.isArray(order.products_ordered) ? order.products_ordered : [];
+        items.forEach(item => {
+            const name = item.name || 'Unknown Furniture';
+            const qty = parseInt(item.quantity) || 1;
+            prodCounts[name] = (prodCounts[name] || 0) + qty;
+        });
+    });
+
+    let bestSellerName = "None";
+    let maxQty = 0;
+    Object.keys(prodCounts).forEach(name => {
+        if (prodCounts[name] > maxQty) {
+            maxQty = prodCounts[name];
+            bestSellerName = `${name} (${maxQty} sold)`;
+        }
+    });
+
+    // Populate Cards
+    document.getElementById('stat-revenue').textContent = `$${totalRevenue.toFixed(2)}`;
+    document.getElementById('stat-orders').textContent = totalOrdersCount;
+    document.getElementById('stat-customers').textContent = customersCount;
+    document.getElementById('stat-bestseller').textContent = bestSellerName;
+
+    // 2. Populate Sales Log Table
+    const tbody = document.querySelector('#sales-history-table tbody');
+    tbody.innerHTML = '';
+
+    if (salesRecordsData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-white-50">No sales transactions logged.</td></tr>';
+    } else {
+        // Sort sales records newest first
+        const sortedSales = [...salesRecordsData].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        sortedSales.forEach(sale => {
+            const tr = document.createElement('tr');
+            const dateStr = new Date(sale.created_at).toLocaleString();
+            tr.innerHTML = `
+                <td style="font-weight: 600; color: #f9b934;">${sale.order_number}</td>
+                <td>${sale.customer_name}</td>
+                <td>$${parseFloat(sale.total_amount).toFixed(2)}</td>
+                <td>${sale.payment_method}</td>
+                <td class="text-white-50">${dateStr}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // 3. Render Trend Charts
+    renderCharts(activeOrders, prodCounts);
+}
+
+// Draw Charts using Chart.js
+function renderCharts(activeOrders, prodCounts) {
+    // Cleanup old charts to prevent duplicate canvases overlapping
+    if (salesChartRef) salesChartRef.destroy();
+    if (pieChartRef) pieChartRef.destroy();
+
+    // Default daily period analysis on tab render
+    loadReportPeriod('daily');
+}
+
+// Handle Analytics Period selection: daily, weekly, monthly, yearly
+window.loadReportPeriod = function(period) {
+    // Highlight button active
+    const buttons = document.querySelectorAll('#report-filters button');
+    buttons.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.textContent.toLowerCase() === period) {
+            btn.classList.add('active');
+        }
+    });
+
+    // Exclude cancelled
+    const activeOrders = ordersData.filter(o => o.order_status !== 'Cancelled');
+
+    let labels = [];
+    let datasetsData = [];
+
+    const now = new Date();
+
+    if (period === 'daily') {
+        // Last 7 days
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(now.getDate() - i);
+            labels.push(d.toLocaleDateString(undefined, { weekday: 'short', month: 'numeric', day: 'numeric' }));
+            
+            // Sum sales on that date
+            const dateKey = d.toDateString();
+            const total = activeOrders
+                .filter(o => new Date(o.created_at).toDateString() === dateKey)
+                .reduce((sum, o) => sum + parseFloat(o.total_amount), 0);
+            datasetsData.push(total);
+        }
+    } else if (period === 'weekly') {
+        // Last 4 weeks
+        for (let i = 3; i >= 0; i--) {
+            const start = new Date();
+            start.setDate(now.getDate() - (i * 7) - 6);
+            start.setHours(0,0,0,0);
+            
+            const end = new Date();
+            end.setDate(now.getDate() - (i * 7));
+            end.setHours(23,59,59,999);
+
+            labels.push(`Wk -${i}`);
+            
+            const total = activeOrders
+                .filter(o => {
+                    const od = new Date(o.created_at);
+                    return od >= start && od <= end;
+                })
+                .reduce((sum, o) => sum + parseFloat(o.total_amount), 0);
+            datasetsData.push(total);
+        }
+    } else if (period === 'monthly') {
+        // Last 6 months
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            labels.push(d.toLocaleString(undefined, { month: 'short', year: '2-digit' }));
+            
+            const total = activeOrders
+                .filter(o => {
+                    const od = new Date(o.created_at);
+                    return od.getMonth() === d.getMonth() && od.getFullYear() === d.getFullYear();
+                })
+                .reduce((sum, o) => sum + parseFloat(o.total_amount), 0);
+            datasetsData.push(total);
+        }
+    } else if (period === 'yearly') {
+        // Last 3 years
+        for (let i = 2; i >= 0; i--) {
+            const year = now.getFullYear() - i;
+            labels.push(year.toString());
+            
+            const total = activeOrders
+                .filter(o => new Date(o.created_at).getFullYear() === year)
+                .reduce((sum, o) => sum + parseFloat(o.total_amount), 0);
+            datasetsData.push(total);
+        }
+    }
+
+    // Render Line Chart
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    if (salesChartRef) salesChartRef.destroy();
+    salesChartRef = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Revenue ($)',
+                data: datasetsData,
+                borderColor: '#f9b934',
+                backgroundColor: 'rgba(249, 185, 52, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.35,
+                pointBackgroundColor: '#f9b934'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { labels: { color: '#f8fafc' } }
+            },
+            scales: {
+                x: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#f8fafc' } },
+                y: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#f8fafc' } }
+            }
+        }
+    });
+
+    // Build Product Pie Chart (Top 5 Best Selling Items)
+    const prodCounts = {};
+    activeOrders.forEach(order => {
+        const items = Array.isArray(order.products_ordered) ? order.products_ordered : [];
+        items.forEach(item => {
+            const name = item.name || 'Unknown Furniture';
+            const qty = parseInt(item.quantity) || 1;
+            prodCounts[name] = (prodCounts[name] || 0) + qty;
+        });
+    });
+
+    const sortedProds = Object.keys(prodCounts)
+        .map(name => ({ name, qty: prodCounts[name] }))
+        .sort((a, b) => b.qty - a.qty)
+        .slice(0, 5);
+
+    const pieLabels = sortedProds.map(p => p.name);
+    const pieData = sortedProds.map(p => p.qty);
+
+    const pieCtx = document.getElementById('productsPieChart').getContext('2d');
+    if (pieChartRef) pieChartRef.destroy();
+    
+    if (pieLabels.length === 0) {
+        // Draw empty text on canvas if no sales
+        pieCtx.clearRect(0, 0, 200, 200);
+        return;
+    }
+
+    pieChartRef = new Chart(pieCtx, {
+        type: 'doughnut',
+        data: {
+            labels: pieLabels,
+            datasets: [{
+                data: pieData,
+                backgroundColor: [
+                    '#f9b934', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899'
+                ],
+                borderWidth: 1,
+                borderColor: 'rgba(15, 23, 42, 0.95)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: '#f8fafc', font: { size: 9 } }
+                }
+            }
+        }
+    });
+};
+
+// -----------------------------------------------------------------
+// TAB: PRODUCTS (CRUD CATALOG)
+// -----------------------------------------------------------------
+function renderProductsTab() {
+    const tbody = document.querySelector('#products-table tbody');
+    tbody.innerHTML = '';
+
+    if (productsData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-white-50">No products found. Add some to get started.</td></tr>';
+        return;
+    }
+
+    productsData.forEach(product => {
+        const tr = document.createElement('tr');
+        const dateStr = new Date(product.created_at).toLocaleDateString();
+        tr.innerHTML = `
+            <td class="prod-image-cell">
+                <img src="${product.image_url || 'images/couch.png'}" onerror="this.src='images/couch.png'">
+            </td>
+            <td style="font-weight: 600;">${product.name}</td>
+            <td><span class="badge bg-secondary">${product.category || 'General'}</span></td>
+            <td>$${parseFloat(product.price).toFixed(2)}</td>
+            <td>${product.stock_quantity || 0} units</td>
+            <td class="text-white-50">${dateStr}</td>
+            <td>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-action-outline" onclick="openEditProductModal('${product.id}')" style="padding: 4px 8px;"><i class="fa fa-edit"></i></button>
+                    <button class="btn btn-sm btn-danger text-white border-0" onclick="handleDeleteProduct('${product.id}', '${product.name.replace(/'/g, "\\'")}')" style="padding: 4px 8px; background: rgba(220,53,69,0.3) !important;"><i class="fa fa-trash"></i></button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Form Operations: Open Modal for Add
+window.openAddProductModal = function () {
+    document.getElementById('productModalLabel').textContent = 'Add New Catalog Product';
+    document.getElementById('product-form-id').value = '';
+    document.getElementById('product-form').reset();
+    bootstrapProductModal.show();
+};
+
+// Form Operations: Open Modal for Edit
+window.openEditProductModal = function (productId) {
+    const product = productsData.find(p => p.id === productId);
+    if (!product) return;
+
+    document.getElementById('productModalLabel').textContent = 'Edit Showroom Product';
+    document.getElementById('product-form-id').value = product.id;
+    document.getElementById('product-name').value = product.name;
+    document.getElementById('product-category').value = product.category || 'Chairs';
+    document.getElementById('product-price').value = product.price;
+    document.getElementById('product-stock').value = product.stock_quantity;
+    document.getElementById('product-description').value = product.description || '';
+    document.getElementById('product-image-url').value = product.image_url || '';
+    document.getElementById('product-image-file').value = ''; // Reset file input
+
+    bootstrapProductModal.show();
+};
+
+// Form Operations: Save Product (Create or Update)
+window.handleSaveProduct = async function () {
+    const id = document.getElementById('product-form-id').value;
+    const name = document.getElementById('product-name').value.trim();
+    const category = document.getElementById('product-category').value;
+    const price = parseFloat(document.getElementById('product-price').value);
+    const stock = parseInt(document.getElementById('product-stock').value);
+    const description = document.getElementById('product-description').value.trim();
+    const imageUrl = document.getElementById('product-image-url').value.trim();
+
+    if (!name || isNaN(price) || isNaN(stock)) {
+        showToast("Please fill in all required fields marked with *.", "error");
+        return;
+    }
+
+    const payload = {
+        name,
+        category,
+        price,
+        stock_quantity: stock,
+        description,
+        image_url: imageUrl
+    };
+
+    const saveBtn = document.getElementById('btn-save-product');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+
+    try {
+        if (id) {
+            // UPDATE
+            await window.Supa.update('products', id, payload);
+            showToast(`Product <strong>${name}</strong> updated successfully!`);
+        } else {
+            // INSERT
+            await window.Supa.insert('products', payload);
+            showToast(`Product <strong>${name}</strong> added to showroom!`);
+        }
+
+        bootstrapProductModal.hide();
+        await refreshAllData();
+
+    } catch (e) {
+        console.error("Save product failed:", e);
+        showToast(`Failed to save product: ${e.message}`, "error");
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Product';
+    }
+};
+
+// Form Operations: Delete Product
+window.handleDeleteProduct = async function (productId, name) {
+    if (confirm(`Are you sure you want to delete "${name}" from the showroom catalog?`)) {
+        try {
+            await window.Supa.delete('products', productId);
+            showToast(`Product <strong>${name}</strong> deleted successfully.`);
+            await refreshAllData();
+        } catch (e) {
+            console.error("Delete product failed:", e);
+            showToast(`Failed to delete product: ${e.message}`, "error");
+        }
+    }
+};
+
+// -----------------------------------------------------------------
+// TAB: ORDERS (Fulfillment Orders tracker)
+// -----------------------------------------------------------------
+function renderOrdersTab() {
+    const tbody = document.querySelector('#orders-table tbody');
+    tbody.innerHTML = '';
+
+    if (ordersData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-white-50">No checkout orders registered yet.</td></tr>';
+        return;
+    }
+
+    // Sort orders: newest first
+    const sortedOrders = [...ordersData].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    sortedOrders.forEach(order => {
+        const tr = document.createElement('tr');
+        const dateStr = new Date(order.created_at).toLocaleString();
+        
+        // Format products ordered list
+        const items = Array.isArray(order.products_ordered) ? order.products_ordered : [];
+        const itemsListHtml = items.map(item => `
+            <div class="small" style="line-height: 1.2; margin-bottom: 4px;">
+                • <strong>${item.name}</strong> (x${item.quantity}) - $${parseFloat(item.price).toFixed(2)}
+            </div>
+        `).join('');
+
+        tr.innerHTML = `
+            <td style="font-weight: 600; color: #f9b934;">${order.order_number}</td>
+            <td>
+                <div style="font-weight:600;">${order.customer_name}</div>
+                <div class="small text-white-50">${order.phone}</div>
+                <div class="small text-white-50">${order.email}</div>
+            </td>
+            <td>
+                <div class="small">${order.county_city}</div>
+                <div class="small text-white-50" style="max-width: 200px; overflow-wrap: break-word;">${order.delivery_address}</div>
+            </td>
+            <td>${itemsListHtml}</td>
+            <td>
+                <div style="font-weight: 700;">$${parseFloat(order.total_amount).toFixed(2)}</div>
+                <div class="small text-white-50">${order.payment_method}</div>
+            </td>
+            <td>
+                <span class="badge-status status-${order.order_status}">${order.order_status || 'Pending'}</span>
+            </td>
+            <td>
+                <div class="d-flex flex-column gap-1">
+                    <select class="form-select form-select-sm form-control-glass glass-select" style="font-size: 0.75rem; padding: 4px 8px;" onchange="handleUpdateOrderStatus('${order.id}', this.value)">
+                        <option value="Pending" ${order.order_status === 'Pending' ? 'selected' : ''}>Pending</option>
+                        <option value="Confirmed" ${order.order_status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
+                        <option value="Processing" ${order.order_status === 'Processing' ? 'selected' : ''}>Processing</option>
+                        <option value="Shipped" ${order.order_status === 'Shipped' ? 'selected' : ''}>Shipped</option>
+                        <option value="Delivered" ${order.order_status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                        <option value="Cancelled" ${order.order_status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                    </select>
+                    <div class="d-flex gap-1 mt-1">
+                        <button class="btn btn-action btn-sm w-100" style="padding: 2px 4px; font-size: 0.7rem;" onclick="handleQuickActionStatus('${order.id}', 'Confirmed')">Accept</button>
+                        <button class="btn btn-danger text-white border-0 btn-sm w-100" style="padding: 2px 4px; font-size: 0.7rem; background: rgba(220,53,69,0.3) !important;" onclick="handleQuickActionStatus('${order.id}', 'Cancelled')">Reject</button>
+                    </div>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Action: Update Order Status
+window.handleUpdateOrderStatus = async function (orderId, newStatus) {
+    try {
+        await window.Supa.update('orders', orderId, { order_status: newStatus });
+        showToast(`Order status updated to <strong>${newStatus}</strong>.`);
+        await refreshAllData();
+    } catch (e) {
+        console.error("Update status failed:", e);
+        showToast(`Failed to update status: ${e.message}`, "error");
+    }
+};
+
+// Quick action accept/reject
+window.handleQuickActionStatus = async function (orderId, status) {
+    await handleUpdateOrderStatus(orderId, status);
+};

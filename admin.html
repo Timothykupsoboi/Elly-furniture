@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="shortcut icon" href="favicon.png">
+    
+    <!-- Bootstrap CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    
+    <title>Admin Dashboard - Elly Furniture</title>
+
+    <style>
+        body {
+            background: linear-gradient(rgba(15, 23, 42, 0.82), rgba(15, 23, 42, 0.82)), url('images/pic1.jfif');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            color: #f8fafc;
+            margin: 0;
+        }
+
+        /* Glassmorphism Styles */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+            height: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .sidebar {
+            height: calc(100vh - 40px);
+            position: sticky;
+            top: 20px;
+            z-index: 100;
+        }
+
+        .sidebar-brand {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+        }
+
+        .sidebar-brand span {
+            color: #f9b934;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-menu-btn {
+            background: transparent;
+            color: rgba(248, 250, 252, 0.7);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .nav-menu-btn:hover, .nav-menu-btn.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: #f9b934;
+        }
+
+        .nav-menu-btn.active {
+            border-left: 4px solid #f9b934;
+        }
+
+        .stat-val {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #f9b934;
+            margin-top: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: rgba(248, 250, 252, 0.6);
+            text-uppercase: true;
+            font-weight: 600;
+        }
+
+        .glass-table {
+            color: #f8fafc !important;
+            margin-bottom: 0;
+        }
+
+        .glass-table th {
+            background: rgba(255, 255, 255, 0.08) !important;
+            color: rgba(248, 250, 252, 0.8) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+            font-weight: 600;
+            padding: 14px 16px;
+        }
+
+        .glass-table td {
+            background: transparent !important;
+            color: #f8fafc !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+            padding: 14px 16px;
+            vertical-align: middle;
+        }
+
+        .glass-table tr:hover td {
+            background: rgba(255, 255, 255, 0.03) !important;
+        }
+
+        .badge-status {
+            font-size: 0.75rem;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .status-Pending { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+        .status-Confirmed { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
+        .status-Processing { background: rgba(139, 92, 246, 0.2); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.4); }
+        .status-Shipped { background: rgba(6, 182, 212, 0.2); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.4); }
+        .status-Delivered { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+        .status-Cancelled { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+
+        .form-control-glass {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            color: #fff !important;
+            border-radius: 8px !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .form-control-glass:focus {
+            background: rgba(255, 255, 255, 0.1) !important;
+            border-color: #f9b934 !important;
+            box-shadow: 0 0 0 0.25rem rgba(249, 185, 52, 0.25) !important;
+        }
+
+        .form-control-glass::placeholder {
+            color: rgba(255, 255, 255, 0.4) !important;
+        }
+
+        .glass-select {
+            background-color: rgba(15, 23, 42, 0.95) !important;
+            color: #fff !important;
+        }
+
+        .btn-action {
+            background: #f9b934;
+            color: #2f2f2f;
+            border: none;
+            font-weight: 600;
+            border-radius: 8px;
+            padding: 8px 16px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-action:hover {
+            background: #e0a324;
+            transform: translateY(-1px);
+            color: #2f2f2f;
+        }
+
+        .btn-action-outline {
+            background: transparent;
+            color: #f8fafc;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-weight: 600;
+            border-radius: 8px;
+            padding: 8px 16px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-action-outline:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .glass-modal .modal-content {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            border-radius: 16px;
+        }
+
+        .glass-modal .modal-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-modal .modal-footer {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-modal .btn-close {
+            filter: invert(1);
+        }
+
+        .report-tab-btn {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #fff;
+            padding: 6px 16px;
+            font-size: 0.85rem;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .report-tab-btn.active, .report-tab-btn:hover {
+            background: #f9b934;
+            color: #2f2f2f;
+            border-color: #f9b934;
+        }
+
+        /* Product Catalog grid styling */
+        .prod-image-cell img {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+            background: #fff;
+            border-radius: 6px;
+            padding: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container-fluid py-4">
+        <div class="row">
+            
+            <!-- Sidebar Panel -->
+            <div class="col-md-3 col-lg-2 mb-4">
+                <div class="glass-panel sidebar d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="sidebar-brand">Elly<span>.</span> Admin</div>
+                        
+                        <div class="nav-menu">
+                            <button class="nav-menu-btn active" id="btn-tab-dashboard" onclick="switchTab('dashboard')">
+                                <i class="fa fa-chart-line"></i> Dashboard
+                            </button>
+                            <button class="nav-menu-btn" id="btn-tab-products" onclick="switchTab('products')">
+                                <i class="fa fa-couch"></i> Products
+                            </button>
+                            <button class="nav-menu-btn" id="btn-tab-orders" onclick="switchTab('orders')">
+                                <i class="fa fa-shopping-bag"></i> Orders
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <button class="nav-menu-btn text-danger" onclick="handleSignOut()">
+                            <i class="fa fa-sign-out-alt"></i> Sign Out
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="col-md-9 col-lg-10">
+                
+                <!-- TOP HEADER -->
+                <div class="glass-panel d-flex justify-content-between align-items-center py-3 mb-4">
+                    <h4 class="mb-0 font-weight-bold" id="panel-title">Sales Analytics Dashboard</h4>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="text-white-50 small" id="admin-user-display">Logged in as admin</span>
+                        <a href="index.html" class="btn btn-action-outline btn-sm"><i class="fa fa-external-link-alt me-1"></i> Visit Shop</a>
+                    </div>
+                </div>
+
+                <!-- ========================================== -->
+                <!-- PANEL: DASHBOARD (ANALYTICS) -->
+                <!-- ========================================== -->
+                <div id="panel-dashboard" class="tab-panel">
+                    
+                    <!-- Stats Cards Grid -->
+                    <div class="row mb-4">
+                        <div class="col-sm-6 col-lg-3 mb-4">
+                            <div class="glass-card text-center d-flex flex-column justify-content-center">
+                                <div class="stat-label">Total Revenue</div>
+                                <div class="stat-val" id="stat-revenue">$0.00</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-lg-3 mb-4">
+                            <div class="glass-card text-center d-flex flex-column justify-content-center">
+                                <div class="stat-label">Total Orders</div>
+                                <div class="stat-val" id="stat-orders">0</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-lg-3 mb-4">
+                            <div class="glass-card text-center d-flex flex-column justify-content-center">
+                                <div class="stat-label">Total Customers</div>
+                                <div class="stat-val" id="stat-customers">0</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-lg-3 mb-4">
+                            <div class="glass-card text-center d-flex flex-column justify-content-center">
+                                <div class="stat-label">Top Selling Item</div>
+                                <div class="stat-val" id="stat-bestseller" style="font-size: 1.15rem; min-height: 43px; display: flex; align-items: center; justify-content: center;">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chart Container and Filters -->
+                    <div class="glass-panel mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                            <h5 class="mb-0 font-weight-bold">Sales Reports & Trends</h5>
+                            <div class="d-flex gap-2" id="report-filters">
+                                <button class="report-tab-btn active" onclick="loadReportPeriod('daily')">Daily</button>
+                                <button class="report-tab-btn" onclick="loadReportPeriod('weekly')">Weekly</button>
+                                <button class="report-tab-btn" onclick="loadReportPeriod('monthly')">Monthly</button>
+                                <button class="report-tab-btn" onclick="loadReportPeriod('yearly')">Yearly</button>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-lg-8 mb-4">
+                                <div style="position: relative; height: 300px;">
+                                    <canvas id="salesChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-lg-4 mb-4">
+                                <h6 class="font-weight-bold mb-3">Best Selling Products</h6>
+                                <div style="position: relative; height: 250px;">
+                                    <canvas id="productsPieChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sales History table -->
+                    <div class="glass-panel">
+                        <h5 class="mb-4 font-weight-bold">Sales Records Log</h5>
+                        <div class="table-responsive">
+                            <table class="table glass-table" id="sales-history-table">
+                                <thead>
+                                    <tr>
+                                        <th>Order #</th>
+                                        <th>Customer</th>
+                                        <th>Amount</th>
+                                        <th>Payment</th>
+                                        <th>Time of Purchase</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4 text-white-50">No sales transactions logged.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========================================== -->
+                <!-- PANEL: PRODUCTS (CATALOG MANAGEMENT) -->
+                <!-- ========================================== -->
+                <div id="panel-products" class="tab-panel d-none">
+                    <div class="glass-panel mb-4 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 font-weight-bold">Manage Showroom Catalog</h5>
+                        <button class="btn btn-action btn-sm" onclick="openAddProductModal()"><i class="fa fa-plus me-1"></i> Add Product</button>
+                    </div>
+
+                    <div class="glass-panel">
+                        <div class="table-responsive">
+                            <table class="table glass-table" id="products-table">
+                                <thead>
+                                    <tr>
+                                        <th>Preview</th>
+                                        <th>Name</th>
+                                        <th>Category</th>
+                                        <th>Price</th>
+                                        <th>Stock Qty</th>
+                                        <th>Created Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="7" class="text-center py-4 text-white-50">No products found. Add some to get started.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========================================== -->
+                <!-- PANEL: ORDERS (ORDER MANAGEMENT) -->
+                <!-- ========================================== -->
+                <div id="panel-orders" class="tab-panel d-none">
+                    <div class="glass-panel">
+                        <h5 class="mb-4 font-weight-bold">Fulfillment Orders Tracker</h5>
+                        <div class="table-responsive">
+                            <table class="table glass-table" id="orders-table">
+                                <thead>
+                                    <tr>
+                                        <th>Order #</th>
+                                        <th>Customer Info</th>
+                                        <th>Address & Delivery</th>
+                                        <th>Ordered Products</th>
+                                        <th>Total Paid</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="7" class="text-center py-4 text-white-50">No checkout orders registered yet.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- PRODUCT ADD/EDIT MODAL -->
+    <div class="modal fade glass-modal" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title font-weight-bold" id="productModalLabel">Add New Catalog Product</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="product-form">
+                        <input type="hidden" id="product-form-id">
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="product-name" class="form-label font-weight-bold text-white-50 small">Product Name *</label>
+                                <input type="text" class="form-control form-control-glass" id="product-name" placeholder="Nordic Lounge Chair" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="product-category" class="form-label font-weight-bold text-white-50 small">Category *</label>
+                                <select class="form-select form-control form-control-glass glass-select" id="product-category" required>
+                                    <option value="Chairs">Chairs</option>
+                                    <option value="Sofas">Sofas</option>
+                                    <option value="Tables">Tables</option>
+                                    <option value="Beds">Beds</option>
+                                    <option value="Accessories">Accessories</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="product-price" class="form-label font-weight-bold text-white-50 small">Price ($) *</label>
+                                <input type="number" step="0.01" min="0" class="form-control form-control-glass" id="product-price" placeholder="49.99" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="product-stock" class="form-label font-weight-bold text-white-50 small">Stock Quantity *</label>
+                                <input type="number" min="0" class="form-control form-control-glass" id="product-stock" placeholder="25" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="product-description" class="form-label font-weight-bold text-white-50 small">Description</label>
+                            <textarea class="form-control form-control-glass" id="product-description" rows="3" placeholder="Handcrafted wooden frame with premium cushion upholstery."></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-7 mb-3">
+                                <label for="product-image-url" class="form-label font-weight-bold text-white-50 small">Image URL</label>
+                                <input type="text" class="form-control form-control-glass" id="product-image-url" placeholder="https://example.com/image.png">
+                            </div>
+                            <div class="col-md-5 mb-3">
+                                <label for="product-image-file" class="form-label font-weight-bold text-white-50 small">Or Upload Image File</label>
+                                <input type="file" class="form-control form-control-glass" id="product-image-file" accept="image/*">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-action-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-action" id="btn-save-product" onclick="handleSaveProduct()">Save Product</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dynamic Bootstrap JS -->
+    <script src="js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js CDN for premium charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Configuration and Client SDKs -->
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>

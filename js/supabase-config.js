@@ -1,0 +1,3 @@
+// Supabase Configuration for Elly Furniture website
+window.SUPABASE_URL = "https://woodczfengptbegmiobb.supabase.co";
+window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indvb2RjemZlbmdwdGJlZ21pb2JiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MTU1NDAsImV4cCI6MjA5NzI5MTU0MH0.cXGTF5m3pirNd9GUC4WIK9s6o0eJMIfLp96fzFB3QEM";

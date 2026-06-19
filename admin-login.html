@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="shortcut icon" href="favicon.png">
+    
+    <!-- Bootstrap CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    
+    <title>Admin Login - Elly Furniture</title>
+
+    <style>
+        body {
+            background: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)), url('images/pic1.jfif');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+            color: #fff;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            text-align: center;
+            animation: fadeIn 0.6s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-logo {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+
+        .login-logo span {
+            color: #f9b934;
+        }
+
+        .login-title {
+            font-size: 1.1rem;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 30px;
+        }
+
+        .form-control-glass {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            color: #fff !important;
+            border-radius: 8px !important;
+            padding: 12px 16px !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .form-control-glass:focus {
+            background: rgba(255, 255, 255, 0.1) !important;
+            border-color: #f9b934 !important;
+            box-shadow: 0 0 0 0.25rem rgba(249, 185, 52, 0.25) !important;
+        }
+
+        .form-control-glass::placeholder {
+            color: rgba(255, 255, 255, 0.4) !important;
+        }
+
+        .input-group-text-glass {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            border-left: none !important;
+            color: rgba(255, 255, 255, 0.6) !important;
+            border-radius: 0 8px 8px 0 !important;
+            cursor: pointer;
+        }
+
+        .btn-glass {
+            background: #f9b934;
+            color: #2f2f2f;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            width: 100%;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+            box-shadow: 0 4px 15px rgba(249, 185, 52, 0.3);
+        }
+
+        .btn-glass:hover {
+            background: #e0a324;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(249, 185, 52, 0.4);
+            color: #2f2f2f;
+        }
+
+        .btn-glass:active {
+            transform: translateY(0);
+        }
+
+        .btn-glass:disabled {
+            background: rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.4);
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 25px;
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: #f9b934;
+        }
+
+        .error-message {
+            background: rgba(220, 53, 69, 0.2);
+            border: 1px solid rgba(220, 53, 69, 0.4);
+            color: #ff8b94;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            display: none;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="login-logo">Elly<span>.</span> Admin</div>
+        <div class="login-title">Sign in to control dashboard portal</div>
+
+        <div class="error-message" id="login-error"></div>
+
+        <form id="login-form">
+            <div class="mb-3 text-start">
+                <label for="email" class="form-label small text-uppercase" style="color: rgba(255,255,255,0.6); font-weight: 600;">Email Address</label>
+                <input type="email" class="form-control form-control-glass" id="email" placeholder="admin@ellyfurniture.com" required autocomplete="username">
+            </div>
+
+            <div class="mb-4 text-start">
+                <label for="password" class="form-label small text-uppercase" style="color: rgba(255,255,255,0.6); font-weight: 600;">Password</label>
+                <div class="input-group">
+                    <input type="password" class="form-control form-control-glass" id="password" placeholder="••••••••" required autocomplete="current-password" style="border-right: none !important; border-radius: 8px 0 0 8px !important;">
+                    <span class="input-group-text input-group-text-glass" id="toggle-password">
+                        <i class="fa fa-eye"></i>
+                    </span>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-glass" id="submit-btn">Sign In</button>
+            <div class="mt-3">
+                <a href="#" id="toggle-register" style="color: rgba(255,255,255,0.6); font-size: 0.85rem; text-decoration: none;">Don't have an admin account? Register here</a>
+            </div>
+        </form>
+
+        <form id="register-form" style="display: none;">
+            <div class="mb-3 text-start">
+                <label for="reg-email" class="form-label small text-uppercase" style="color: rgba(255,255,255,0.6); font-weight: 600;">Email Address</label>
+                <input type="email" class="form-control form-control-glass" id="reg-email" placeholder="admin@ellyfurniture.com" required>
+            </div>
+
+            <div class="mb-4 text-start">
+                <label for="reg-password" class="form-label small text-uppercase" style="color: rgba(255,255,255,0.6); font-weight: 600;">Password</label>
+                <input type="password" class="form-control form-control-glass" id="reg-password" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn btn-glass" id="reg-submit-btn">Register Admin</button>
+            <div class="mt-3">
+                <a href="#" id="toggle-login" style="color: rgba(255,255,255,0.6); font-size: 0.85rem; text-decoration: none;">Already have an account? Sign In</a>
+            </div>
+        </form>
+
+        <a href="index.html" class="back-link"><i class="fa fa-arrow-left me-1"></i> Back to Homepage</a>
+    </div>
+
+    <!-- Configuration and Client SDKs -->
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const form = document.getElementById('login-form');
+            const regForm = document.getElementById('register-form');
+            const errorDiv = document.getElementById('login-error');
+            const submitBtn = document.getElementById('submit-btn');
+            const regSubmitBtn = document.getElementById('reg-submit-btn');
+            const togglePassword = document.getElementById('toggle-password');
+            const passwordInput = document.getElementById('password');
+            
+            const toggleRegister = document.getElementById('toggle-register');
+            const toggleLogin = document.getElementById('toggle-login');
+
+            // 1. Initialize client
+            let supabase = null;
+            try {
+                supabase = await window.Supa.init();
+            } catch (e) {
+                errorDiv.textContent = `Configuration Error: ${e.message}`;
+                errorDiv.style.display = 'block';
+                submitBtn.disabled = true;
+                return;
+            }
+
+            // Check if already authenticated, redirect to dashboard
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                window.location.href = 'admin.html';
+                return;
+            }
+
+            // 2. Toggle password visibility
+            togglePassword.addEventListener('click', () => {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                togglePassword.querySelector('i').className = type === 'password' ? 'fa fa-eye' : 'fa fa-eye-slash';
+            });
+
+            // 3. Tab switching
+            toggleRegister.addEventListener('click', (e) => {
+                e.preventDefault();
+                form.style.display = 'none';
+                regForm.style.display = 'block';
+                errorDiv.style.display = 'none';
+            });
+
+            toggleLogin.addEventListener('click', (e) => {
+                e.preventDefault();
+                regForm.style.display = 'none';
+                form.style.display = 'block';
+                errorDiv.style.display = 'none';
+            });
+
+            // 4. Login submission
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                errorDiv.style.display = 'none';
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Authenticating...';
+
+                const email = document.getElementById('email').value.trim();
+                const password = passwordInput.value;
+
+                try {
+                    const { data, error } = await supabase.auth.signInWithPassword({
+                        email: email,
+                        password: password
+                    });
+
+                    if (error) {
+                        throw error;
+                    }
+
+                    // Successful login redirect to dashboard
+                    window.location.href = 'admin.html';
+
+                } catch (err) {
+                    console.error("Login authentication error:", err);
+                    errorDiv.textContent = err.message || 'Invalid email or password.';
+                    errorDiv.style.display = 'block';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Sign In';
+                }
+            });
+
+            // 5. Register submission
+            regForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                errorDiv.style.display = 'none';
+                regSubmitBtn.disabled = true;
+                regSubmitBtn.textContent = 'Registering...';
+
+                const email = document.getElementById('reg-email').value.trim();
+                const password = document.getElementById('reg-password').value;
+
+                try {
+                    const { data, error } = await supabase.auth.signUp({
+                        email: email,
+                        password: password
+                    });
+
+                    if (error) {
+                        throw error;
+                    }
+
+                    alert("Registration request completed! You can now sign in using your credentials.");
+                    regForm.reset();
+                    regForm.style.display = 'none';
+                    form.style.display = 'block';
+
+                } catch (err) {
+                    console.error("Registration error:", err);
+                    errorDiv.textContent = err.message || 'Registration failed.';
+                    errorDiv.style.display = 'block';
+                } finally {
+                    regSubmitBtn.disabled = false;
+                    regSubmitBtn.textContent = 'Register Admin';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
