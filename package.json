@@ -1,0 +1,17 @@
+{
+  "name": "elly-furniture",
+  "version": "1.0.0",
+  "description": "Elly Furniture website upgraded with Supabase client-side integration",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.43.5"
+  },
+  "devDependencies": {
+    "vite": "^5.2.11"
+  }
+}
