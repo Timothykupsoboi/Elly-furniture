@@ -63,6 +63,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         const modalEl = document.getElementById('productModal');
         if (modalEl) {
             bootstrapProductModal = new bootstrap.Modal(modalEl);
+            modalEl.addEventListener('hidden.bs.modal', () => {
+                stopWebcam();
+                const previewContainer = document.getElementById('capture-preview-container');
+                if (previewContainer) previewContainer.classList.add('d-none');
+            });
         }
 
         // Add change listener to product image file input
@@ -167,10 +172,10 @@ function renderCurrentTab() {
 window.handleSignOut = async function () {
     try {
         await supabase.auth.signOut();
-        window.location.href = 'admin-login.html';
+        window.location.href = 'index.html';
     } catch (e) {
         console.error("Sign out failed:", e);
-        window.location.href = 'admin-login.html';
+        window.location.href = 'index.html';
     }
 };
 
@@ -621,4 +626,75 @@ window.handleUpdateOrderStatus = async function (orderId, newStatus) {
 // Quick action accept/reject
 window.handleQuickActionStatus = async function (orderId, status) {
     await handleUpdateOrderStatus(orderId, status);
+};
+
+// Camera Capture API integration
+let webcamStream = null;
+
+window.startWebcam = async function() {
+    const video = document.getElementById('webcam');
+    const container = document.getElementById('camera-container');
+    const btnStart = document.getElementById('btn-start-camera');
+    const btnCapture = document.getElementById('btn-capture');
+    const btnStop = document.getElementById('btn-stop-camera');
+    
+    try {
+        webcamStream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: 'environment' }, 
+            audio: false 
+        });
+        video.srcObject = webcamStream;
+        container.classList.remove('d-none');
+        btnCapture.classList.remove('d-none');
+        btnStop.classList.remove('d-none');
+        btnStart.classList.add('d-none');
+    } catch (err) {
+        console.error("Camera access failed:", err);
+        showToast("Unable to access camera. Please check permissions.", "error");
+    }
+};
+
+window.captureSnapshot = function() {
+    const video = document.getElementById('webcam');
+    const canvas = document.getElementById('photo-canvas');
+    const preview = document.getElementById('capture-preview');
+    const previewContainer = document.getElementById('capture-preview-container');
+    const imageUrlInput = document.getElementById('product-image-url');
+    
+    if (!webcamStream) return;
+    
+    const context = canvas.getContext('2d');
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/jpeg');
+    
+    imageUrlInput.value = dataUrl;
+    preview.src = dataUrl;
+    previewContainer.classList.remove('d-none');
+    
+    showToast("Snapshot captured successfully!");
+    stopWebcam();
+};
+
+window.stopWebcam = function() {
+    const video = document.getElementById('webcam');
+    const container = document.getElementById('camera-container');
+    const btnStart = document.getElementById('btn-start-camera');
+    const btnCapture = document.getElementById('btn-capture');
+    const btnStop = document.getElementById('btn-stop-camera');
+    
+    if (webcamStream) {
+        const tracks = webcamStream.getTracks();
+        tracks.forEach(track => track.stop());
+        webcamStream = null;
+    }
+    
+    if (video) video.srcObject = null;
+    
+    if (container) container.classList.add('d-none');
+    if (btnCapture) btnCapture.classList.add('d-none');
+    if (btnStop) btnStop.classList.add('d-none');
+    if (btnStart) btnStart.classList.remove('d-none');
 };
