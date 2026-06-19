@@ -165,14 +165,12 @@ function renderCurrentTab() {
 // Sign Out
 // -----------------------------------------------------------------
 window.handleSignOut = async function () {
-    if (confirm("Are you sure you want to sign out?")) {
-        try {
-            await supabase.auth.signOut();
-            window.location.href = 'admin-login.html';
-        } catch (e) {
-            console.error("Sign out failed:", e);
-            window.location.href = 'admin-login.html';
-        }
+    try {
+        await supabase.auth.signOut();
+        window.location.href = 'admin-login.html';
+    } catch (e) {
+        console.error("Sign out failed:", e);
+        window.location.href = 'admin-login.html';
     }
 };
 
