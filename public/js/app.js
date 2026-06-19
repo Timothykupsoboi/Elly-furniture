@@ -229,10 +229,8 @@
                         </div>
                         <div>
                             <strong class="product-price" style="font-size: 1.25rem; color: #2f2f2f; display: block; margin-bottom: 15px;">Ksh ${parseFloat(product.price).toFixed(2)}</strong>
+                            <button class="btn btn-primary btn-sm w-100 btn-add-to-cart" style="border-radius: 30px; font-weight: 600; font-size: 0.85rem; padding: 10px 15px;">+ Add to Cart</button>
                         </div>
-                        <span class="icon-cross btn-add-to-cart">
-                            <img src="images/cross.svg" class="img-fluid">
-                        </span>
                     </div>
                 `;
 
