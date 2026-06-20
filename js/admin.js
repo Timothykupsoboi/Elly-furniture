@@ -1,6 +1,6 @@
 // Elly Furniture - Admin Dashboard Controller (Supabase Powered)
+import { supabase } from './supabase-client.js';
 
-let supabase = null;
 let currentTab = 'dashboard';
 let productsData = [];
 let ordersData = [];
@@ -43,8 +43,8 @@ function showToast(message, type = 'success') {
 // -----------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        // Initialize Supabase Connection
-        supabase = await window.Supa.init();
+        // Initialize Supabase Connection using global window.Supa helper
+        await window.Supa.init();
         
         // Auth Guard
         const { data: { session } } = await supabase.auth.getSession();
@@ -90,23 +90,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         await refreshAllData();
 
         // Subscribe to real-time updates
-        if (supabase) {
-            supabase
-                .channel('realtime-db-changes')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
-                    console.log('Realtime orders change detected');
-                    refreshAllData();
-                })
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
-                    console.log('Realtime products change detected');
-                    refreshAllData();
-                })
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'sales_records' }, () => {
-                    console.log('Realtime sales records change detected');
-                    refreshAllData();
-                })
-                .subscribe();
-        }
+        supabase
+            .channel('realtime-db-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+                console.log('Realtime orders change detected');
+                refreshAllData();
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
+                console.log('Realtime products change detected');
+                refreshAllData();
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'sales_records' }, () => {
+                console.log('Realtime sales records change detected');
+                refreshAllData();
+            })
+            .subscribe();
 
     } catch (e) {
         console.error("Dashboard initialization failed:", e);
@@ -191,10 +189,14 @@ function renderCurrentTab() {
 window.handleSignOut = async function () {
     try {
         await supabase.auth.signOut();
-        window.location.href = 'index.html';
+        // Clear session storage just in case
+        localStorage.clear();
+        sessionStorage.clear();
+        // Redirect immediately to home page (/)
+        window.location.href = '/';
     } catch (e) {
         console.error("Sign out failed:", e);
-        window.location.href = 'index.html';
+        window.location.href = '/';
     }
 };
 
@@ -219,7 +221,7 @@ function renderDashboardTab() {
         });
     });
 
-    let bestSellerName = "None";
+    let bestSellerName = "No Data Available";
     let maxQty = 0;
     Object.keys(prodCounts).forEach(name => {
         if (prodCounts[name] > maxQty) {
@@ -366,58 +368,74 @@ window.loadReportPeriod = function(period) {
         }
     }
 
-    // Render Line Chart
-    const ctx = document.getElementById('salesChart').getContext('2d');
-    if (salesChartRef) salesChartRef.destroy();
-    salesChartRef = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Revenue (Ksh)',
-                data: datasetsData,
-                borderColor: '#f9b934',
-                backgroundColor: 'rgba(249, 185, 52, 0.1)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.35,
-                pointBackgroundColor: '#f9b934'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { labels: { color: '#f8fafc' } },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label || '';
-                            if (label) {
-                                label += ': ';
+    // Toggle salesChart placeholder if no revenue
+    const salesCanvas = document.getElementById('salesChart');
+    const salesPlaceholder = document.getElementById('salesChartPlaceholder');
+    const totalSalesRevenue = datasetsData.reduce((sum, val) => sum + val, 0);
+
+    if (totalSalesRevenue === 0) {
+        if (salesCanvas) salesCanvas.classList.add('d-none');
+        if (salesPlaceholder) salesPlaceholder.classList.remove('d-none');
+        if (salesChartRef) {
+            salesChartRef.destroy();
+            salesChartRef = null;
+        }
+    } else {
+        if (salesCanvas) salesCanvas.classList.remove('d-none');
+        if (salesPlaceholder) salesPlaceholder.classList.add('d-none');
+
+        const ctx = salesCanvas.getContext('2d');
+        if (salesChartRef) salesChartRef.destroy();
+        salesChartRef = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Revenue (Ksh)',
+                    data: datasetsData,
+                    borderColor: '#f9b934',
+                    backgroundColor: 'rgba(249, 185, 52, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.35,
+                    pointBackgroundColor: '#f9b934'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#f8fafc' } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += 'Ksh ' + parseFloat(context.parsed.y).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                }
+                                return label;
                             }
-                            if (context.parsed.y !== null) {
-                                label += 'Ksh ' + parseFloat(context.parsed.y).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                            }
-                            return label;
                         }
                     }
-                }
-            },
-            scales: {
-                x: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#f8fafc' } },
-                y: { 
-                    grid: { color: 'rgba(255,255,255,0.06)' }, 
-                    ticks: { 
-                        color: '#f8fafc',
-                        callback: function(value) {
-                            return 'Ksh ' + parseFloat(value).toLocaleString();
+                },
+                scales: {
+                    x: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#f8fafc' } },
+                    y: { 
+                        grid: { color: 'rgba(255,255,255,0.06)' }, 
+                        ticks: { 
+                            color: '#f8fafc',
+                            callback: function(value) {
+                                return 'Ksh ' + parseFloat(value).toLocaleString();
+                            }
                         }
                     }
                 }
             }
-        }
-    });
+        });
+    }
 
     // Build Product Pie Chart (Top 5 Best Selling Items)
     const prodCounts = {};
@@ -438,39 +456,47 @@ window.loadReportPeriod = function(period) {
     const pieLabels = sortedProds.map(p => p.name);
     const pieData = sortedProds.map(p => p.qty);
 
-    const pieCtx = document.getElementById('productsPieChart').getContext('2d');
-    if (pieChartRef) pieChartRef.destroy();
-    
-    if (pieLabels.length === 0) {
-        // Draw empty text on canvas if no sales
-        pieCtx.clearRect(0, 0, 200, 200);
-        return;
-    }
+    const pieCanvas = document.getElementById('productsPieChart');
+    const piePlaceholder = document.getElementById('pieChartPlaceholder');
 
-    pieChartRef = new Chart(pieCtx, {
-        type: 'doughnut',
-        data: {
-            labels: pieLabels,
-            datasets: [{
-                data: pieData,
-                backgroundColor: [
-                    '#f9b934', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899'
-                ],
-                borderWidth: 1,
-                borderColor: 'rgba(15, 23, 42, 0.95)'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: { color: '#f8fafc', font: { size: 9 } }
+    if (pieLabels.length === 0) {
+        if (pieCanvas) pieCanvas.classList.add('d-none');
+        if (piePlaceholder) piePlaceholder.classList.remove('d-none');
+        if (pieChartRef) {
+            pieChartRef.destroy();
+            pieChartRef = null;
+        }
+    } else {
+        if (pieCanvas) pieCanvas.classList.remove('d-none');
+        if (piePlaceholder) piePlaceholder.classList.add('d-none');
+
+        const pieCtx = pieCanvas.getContext('2d');
+        if (pieChartRef) pieChartRef.destroy();
+        pieChartRef = new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: pieLabels,
+                datasets: [{
+                    data: pieData,
+                    backgroundColor: [
+                        '#f9b934', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899'
+                    ],
+                    borderWidth: 1,
+                    borderColor: 'rgba(15, 23, 42, 0.95)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#f8fafc', font: { size: 9 } }
+                    }
                 }
             }
-        }
-    });
+        });
+    }
 };
 
 // -----------------------------------------------------------------
@@ -513,7 +539,7 @@ window.openAddProductModal = function () {
     document.getElementById('productModalLabel').textContent = 'Add New Catalog Product';
     document.getElementById('product-form-id').value = '';
     document.getElementById('product-form').reset();
-    bootstrapProductModal.show();
+    if (bootstrapProductModal) bootstrapProductModal.show();
 };
 
 // Form Operations: Open Modal for Edit
@@ -531,7 +557,7 @@ window.openEditProductModal = function (productId) {
     document.getElementById('product-image-url').value = product.image_url || '';
     document.getElementById('product-image-file').value = ''; // Reset file input
 
-    bootstrapProductModal.show();
+    if (bootstrapProductModal) bootstrapProductModal.show();
 };
 
 // Form Operations: Save Product (Create or Update)
@@ -573,7 +599,7 @@ window.handleSaveProduct = async function () {
             showToast(`Product <strong>${name}</strong> added to showroom!`);
         }
 
-        bootstrapProductModal.hide();
+        if (bootstrapProductModal) bootstrapProductModal.hide();
         await refreshAllData();
 
     } catch (e) {
@@ -587,6 +613,7 @@ window.handleSaveProduct = async function () {
 
 // Form Operations: Delete Product
 window.handleDeleteProduct = async function (productId, name) {
+    if (!confirm(`Are you sure you want to delete ${name}?`)) return;
     try {
         await window.Supa.delete('products', productId);
         showToast(`Product <strong>${name}</strong> deleted successfully.`);
@@ -614,7 +641,6 @@ function renderOrdersTab() {
 
     sortedOrders.forEach(order => {
         const tr = document.createElement('tr');
-        const dateStr = new Date(order.created_at).toLocaleString();
         
         // Format products ordered list
         const items = Array.isArray(order.products_ordered) ? order.products_ordered : [];
@@ -677,7 +703,7 @@ function showEmailSentPreview(to, subject, body) {
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content text-white" style="background: #252830; border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
                 <div class="modal-header border-bottom-0 pb-0">
-                    <h5 class="modal-title" style="font-weight: 700; color: #f9b934;"><i class="fa fa-paper-plane me-2"></i> Email Notification Dispatched</h5>
+                     <h5 class="modal-title" style="font-weight: 700; color: #f9b934;"><i class="fa fa-paper-plane me-2"></i> Email Notification Dispatched</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -701,10 +727,10 @@ function showEmailSentPreview(to, subject, body) {
 }
 
 async function sendEmailNotification(emailDetails) {
-    // 1. Show the beautiful visual outgoing email preview modal immediately
+    // 1. Show email sent preview immediately
     showEmailSentPreview(emailDetails.to, emailDetails.subject, emailDetails.body);
 
-    // 2. Fetch credentials from environment variables (Vite-injected at build-time)
+    // 2. Fetch credentials
     const emailUser = import.meta.env.VITE_EMAIL_USER || "";
     const emailPass = import.meta.env.VITE_EMAIL_PASS || "";
 
@@ -723,7 +749,7 @@ async function sendEmailNotification(emailDetails) {
                 To: emailDetails.to,
                 From: emailUser,
                 Subject: emailDetails.subject,
-                Body: emailDetails.body.replace(/\n/g, "<br>") // Convert newlines to HTML break tags
+                Body: emailDetails.body.replace(/\n/g, "<br>")
             });
             console.log("SmtpJS response:", response);
             if (response === "OK") {

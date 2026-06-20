@@ -358,14 +358,16 @@
                         
                         <div class="row">
                             <div class="col-lg-8 mb-4">
-                                <div style="position: relative; height: 260px; max-height: 40vh;">
+                                <div id="salesChartContainer" style="position: relative; height: 260px; max-height: 40vh;">
                                     <canvas id="salesChart"></canvas>
+                                    <div id="salesChartPlaceholder" class="d-none text-center py-5 text-white-50" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.02); border-radius: 8px; border: 1px dashed rgba(255,255,255,0.1);">No Data Available</div>
                                 </div>
                             </div>
                             <div class="col-lg-4 mb-4">
                                 <h6 class="font-weight-bold mb-3">Best Selling Products</h6>
-                                <div style="position: relative; height: 210px; max-height: 35vh;">
+                                <div id="pieChartContainer" style="position: relative; height: 210px; max-height: 35vh;">
                                     <canvas id="productsPieChart"></canvas>
+                                    <div id="pieChartPlaceholder" class="d-none text-center py-5 text-white-50" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.02); border-radius: 8px; border: 1px dashed rgba(255,255,255,0.1);">No Data Available</div>
                                 </div>
                             </div>
                         </div>
@@ -552,6 +554,6 @@
 
     <!-- Configuration and Client SDKs -->
     <script type="module" src="js/supabase-client.js"></script>
-    <script src="js/admin.js"></script>
+    <script type="module" src="js/admin.js"></script>
 </body>
 </html>
