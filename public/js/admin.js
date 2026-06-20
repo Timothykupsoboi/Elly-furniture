@@ -646,7 +646,44 @@ function showEmailSentPreview(to, subject, body) {
 }
 
 async function sendEmailNotification(emailDetails) {
+    // 1. Show the beautiful visual outgoing email preview modal immediately
     showEmailSentPreview(emailDetails.to, emailDetails.subject, emailDetails.body);
+
+    // 2. Fetch credentials from environment variables (Vite-injected at build-time)
+    const emailUser = import.meta.env.VITE_EMAIL_USER || "";
+    const emailPass = import.meta.env.VITE_EMAIL_PASS || "";
+
+    if (!emailUser || !emailPass) {
+        console.warn("Gmail SMTP credentials (VITE_EMAIL_USER / VITE_EMAIL_PASS) are missing. Falling back to mock dispatch.");
+        return;
+    }
+
+    try {
+        console.log("Attempting real SMTP mail dispatch via SmtpJS...");
+        if (window.Email) {
+            const response = await window.Email.send({
+                Host: "smtp.gmail.com",
+                Username: emailUser,
+                Password: emailPass,
+                To: emailDetails.to,
+                From: emailUser,
+                Subject: emailDetails.subject,
+                Body: emailDetails.body.replace(/\n/g, "<br>") // Convert newlines to HTML break tags
+            });
+            console.log("SmtpJS response:", response);
+            if (response === "OK") {
+                showToast("Real email notification sent successfully via SMTP.");
+            } else {
+                console.error("SMTP relay error details:", response);
+                showToast("SMTP email dispatch failed. Verify Gmail App Password settings.", "warning");
+            }
+        } else {
+            console.warn("SmtpJS library not loaded. Falling back to mock dispatch.");
+        }
+    } catch (e) {
+        console.error("SmtpJS execution error:", e);
+        showToast("Email dispatch failed due to code execution error.", "error");
+    }
 }
 
 // Action: Update Order Status
