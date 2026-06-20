@@ -504,6 +504,12 @@
             const cartItems = Cart.getItems();
             const totals = Cart.getTotals();
             const orderNum = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
+            const orderId = (typeof crypto !== 'undefined' && crypto.randomUUID) 
+                ? crypto.randomUUID() 
+                : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
 
             // 1. Check if customer exists by phone, upsert record in customers
             // Fetch customer by phone
@@ -554,6 +560,7 @@
 
             // 2. Save order to Supabase orders table
             const orderPayload = {
+                id: orderId,
                 order_number: orderNum,
                 customer_name: fullName,
                 phone: phone,
@@ -567,11 +574,12 @@
                 order_status: 'Pending'
             };
 
-            const insertedOrders = await window.Supa.insert('orders', orderPayload);
-            if (!insertedOrders || insertedOrders.length === 0) {
-                throw new Error("Unable to save order record in Supabase.");
+            const { error: orderInsertErr } = await window.Supa.client
+                .from('orders')
+                .insert(orderPayload);
+            if (orderInsertErr) {
+                throw orderInsertErr;
             }
-            const orderId = insertedOrders[0].id;
 
             // 3. Save sale entry to sales_records table
             const salePayload = {
@@ -582,7 +590,12 @@
                 payment_method: paymentMethod
             };
             
-            await window.Supa.insert('sales_records', salePayload);
+            const { error: saleInsertErr } = await window.Supa.client
+                .from('sales_records')
+                .insert(salePayload);
+            if (saleInsertErr) {
+                console.warn("Failed to save sales record:", saleInsertErr);
+            }
 
             // 4. Clear Cart and Redirect
             Cart.clear();
