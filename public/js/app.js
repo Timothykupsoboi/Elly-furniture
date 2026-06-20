@@ -114,7 +114,7 @@
         },
 
         updateHeaderBadge() {
-            const cartLinks = document.querySelectorAll('a[href="cart.html"]');
+            const cartLinks = document.querySelectorAll('a[href="cart.html"], a[href="/cart"], a[href="cart"]');
             const totals = this.getTotals();
             cartLinks.forEach(link => {
                 const oldBadge = link.querySelector('.cart-badge');
@@ -273,7 +273,7 @@
                 cartContainer.style.display = 'none';
                 emptyAlert.style.display = 'block';
                 // Hide checkout sum blocks
-                const cartSummaryBlock = document.querySelector('.site-blocks-table').parentNode.nextElementSibling;
+                const cartSummaryBlock = document.querySelector('.site-blocks-table').closest('.row').nextElementSibling;
                 if (cartSummaryBlock) cartSummaryBlock.style.display = 'none';
 
                 // Reset totals to zero when empty
@@ -289,7 +289,7 @@
 
             cartContainer.style.display = 'block';
             emptyAlert.style.display = 'none';
-            const cartSummaryBlock = document.querySelector('.site-blocks-table').parentNode.nextElementSibling;
+            const cartSummaryBlock = document.querySelector('.site-blocks-table').closest('.row').nextElementSibling;
             if (cartSummaryBlock) cartSummaryBlock.style.display = 'flex';
 
             items.forEach(item => {

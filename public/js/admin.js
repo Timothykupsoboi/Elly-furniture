@@ -89,6 +89,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Load all data
         await refreshAllData();
 
+        // Subscribe to real-time updates
+        if (supabase) {
+            supabase
+                .channel('realtime-db-changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+                    console.log('Realtime orders change detected');
+                    refreshAllData();
+                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
+                    console.log('Realtime products change detected');
+                    refreshAllData();
+                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'sales_records' }, () => {
+                    console.log('Realtime sales records change detected');
+                    refreshAllData();
+                })
+                .subscribe();
+        }
+
     } catch (e) {
         console.error("Dashboard initialization failed:", e);
         showToast("Error initializing Supabase connection.", "error");
@@ -219,11 +238,25 @@ function renderDashboardTab() {
     const tbody = document.querySelector('#sales-history-table tbody');
     tbody.innerHTML = '';
 
-    if (salesRecordsData.length === 0) {
+    const cancelledOrderIds = new Set(
+        ordersData
+            .filter(o => o.order_status === 'Cancelled')
+            .map(o => o.id)
+    );
+    const cancelledOrderNumbers = new Set(
+        ordersData
+            .filter(o => o.order_status === 'Cancelled')
+            .map(o => o.order_number)
+    );
+    const activeSales = salesRecordsData.filter(sale => 
+        !cancelledOrderIds.has(sale.order_id) && !cancelledOrderNumbers.has(sale.order_number)
+    );
+
+    if (activeSales.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-white-50">No sales transactions logged.</td></tr>';
     } else {
         // Sort sales records newest first
-        const sortedSales = [...salesRecordsData].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        const sortedSales = [...activeSales].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         sortedSales.forEach(sale => {
             const tr = document.createElement('tr');
             const dateStr = new Date(sale.created_at).toLocaleString();
@@ -341,7 +374,7 @@ window.loadReportPeriod = function(period) {
         data: {
             labels: labels,
             datasets: [{
-                label: 'Revenue ($)',
+                label: 'Revenue (Ksh)',
                 data: datasetsData,
                 borderColor: '#f9b934',
                 backgroundColor: 'rgba(249, 185, 52, 0.1)',
@@ -355,11 +388,33 @@ window.loadReportPeriod = function(period) {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { labels: { color: '#f8fafc' } }
+                legend: { labels: { color: '#f8fafc' } },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += 'Ksh ' + parseFloat(context.parsed.y).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            }
+                            return label;
+                        }
+                    }
+                }
             },
             scales: {
                 x: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#f8fafc' } },
-                y: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#f8fafc' } }
+                y: { 
+                    grid: { color: 'rgba(255,255,255,0.06)' }, 
+                    ticks: { 
+                        color: '#f8fafc',
+                        callback: function(value) {
+                            return 'Ksh ' + parseFloat(value).toLocaleString();
+                        }
+                    }
+                }
             }
         }
     });

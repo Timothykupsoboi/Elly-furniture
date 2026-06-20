@@ -131,3 +131,9 @@ CREATE POLICY "Allow admin access to sales records"
 -- We will write the insertion logic directly in JS for reliability and speed,
 -- but having this schema ensures database-level structure is complete.
 -- ==============================================================================
+
+-- Enable Realtime Publications for Dashboard Sync
+BEGIN;
+  DROP PUBLICATION IF EXISTS supabase_realtime;
+  CREATE PUBLICATION supabase_realtime FOR TABLE products, orders, customers, sales_records;
+COMMIT;
